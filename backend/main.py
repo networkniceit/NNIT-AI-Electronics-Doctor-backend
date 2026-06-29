@@ -23,7 +23,7 @@ from api.pdf_report import router as pdf_report_router
 from api.customers import router as customers_router
 from api.tickets import router as tickets_router
 from api.inventory import router as inventory_router
-
+from api.enterprise import router as enterprise_router
 
 app = FastAPI(
     title="NNIT AI Electronics Doctor Pro",
@@ -64,6 +64,7 @@ app.include_router(pdf_report_router, prefix="/ai")
 app.include_router(customers_router, prefix="/ai")
 app.include_router(tickets_router, prefix="/ai")
 app.include_router(inventory_router, prefix="/ai")
+app.include_router(enterprise_router, prefix="/ai")
 @app.get("/")
 def home():
     return {
