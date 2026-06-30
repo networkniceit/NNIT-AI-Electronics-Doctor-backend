@@ -3,10 +3,7 @@ import sqlite3
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-# Keep old DB name for compatibility
 DB = os.path.join(BASE_DIR, "doctor.db")
-
-# Enterprise DB name for new modules
 ENTERPRISE_DB = os.path.join(BASE_DIR, "nnit_doctor.db")
 
 
@@ -37,7 +34,6 @@ def q_enterprise(sql, p=(), fetch=False):
 
 
 def init():
-    # Old compatibility tables in doctor.db
     q("""
         CREATE TABLE IF NOT EXISTS customers(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +62,6 @@ def init():
         )
     """)
 
-    # Enterprise tables in nnit_doctor.db
     q_enterprise("""
         CREATE TABLE IF NOT EXISTS customers(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,6 +73,26 @@ def init():
             notes TEXT DEFAULT '',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'active'
+        )
+    """)
+
+    q_enterprise("""
+        CREATE TABLE IF NOT EXISTS devices(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER DEFAULT 0,
+            customer_name TEXT DEFAULT '',
+            brand TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            imei TEXT DEFAULT '',
+            serial_number TEXT DEFAULT '',
+            color TEXT DEFAULT '',
+            storage TEXT DEFAULT '',
+            condition TEXT DEFAULT '',
+            purchase_date TEXT DEFAULT '',
+            warranty_expiry TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
