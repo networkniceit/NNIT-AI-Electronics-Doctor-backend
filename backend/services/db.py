@@ -97,6 +97,22 @@ def init():
     """)
 
     q_enterprise("""
+        CREATE TABLE IF NOT EXISTS staff(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT,
+            role TEXT DEFAULT 'Technician',
+            phone TEXT DEFAULT '',
+            email TEXT DEFAULT '',
+            username TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            hourly_rate REAL DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    q_enterprise("""
         CREATE TABLE IF NOT EXISTS tickets(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             customer TEXT,

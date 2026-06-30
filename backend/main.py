@@ -25,7 +25,7 @@ from api.tickets import router as tickets_router
 from api.inventory import router as inventory_router
 from api.enterprise import router as enterprise_router
 from api.devices import router as devices_router
-
+from api.staff import router as staff_router
 app = FastAPI(
     title="NNIT AI Electronics Doctor Pro",
     version="1.0.0",
