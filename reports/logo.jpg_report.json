@@ -1,0 +1,18 @@
+{
+    "company": "Network Nice IT (NNIT)",
+    "product": "NNIT AI Electronics Doctor Pro",
+    "report_id": "20260627201201",
+    "date": "2026-06-27 20:12:01",
+    "device": "Unknown Electronics Device",
+    "filename": "logo.jpg",
+    "diagnosis": {
+        "fault": "Needs clearer image or real AI vision model",
+        "confidence": 45,
+        "severity": "Medium"
+    },
+    "recommended_parts": [],
+    "estimated_repair_time": "30 Minutes",
+    "estimated_cost": "\u20ac0",
+    "technician": "Network Nice IT",
+    "status": "Generated"
+}
