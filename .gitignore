@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.db
+*.db-journal
+.env
+uploads/
+frames/
+reports/
+pdf_reports/
+*.pyd
+.venv/
+venv/
