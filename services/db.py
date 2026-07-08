@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sqlite3
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -173,5 +173,15 @@ def table_count(table, db_path=ENTERPRISE_DB):
     except Exception:
         return 0
 
-
+    q_enterprise("""
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            full_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'Admin',
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 init()
