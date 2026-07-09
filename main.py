@@ -47,6 +47,7 @@ from api.android_phone import router as android_phone_router
 from api.customers import router as customers_router
 from api.tickets import router as tickets_router
 from api.inventory import router as inventory_router
+from api.invoices import router as invoices_router
 from api.enterprise import router as enterprise_router
 from api.devices import router as devices_router
 from api.staff import router as staff_router
@@ -108,6 +109,7 @@ routers = [
     customers_router,
     tickets_router,
     inventory_router,
+    invoices_router,
     enterprise_router,
     devices_router,
     staff_router,
