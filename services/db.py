@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sqlite3
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -185,3 +185,4 @@ def table_count(table, db_path=ENTERPRISE_DB):
         )
     """)
 init()
+
