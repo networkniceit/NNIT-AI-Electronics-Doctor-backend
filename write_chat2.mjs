@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+﻿import { writeFileSync } from "fs";
+const code = `from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
 
@@ -31,7 +32,7 @@ def ai_chat(req: ChatMessage):
                 messages.append({"role": h["role"], "content": h["content"]})
         user_content = req.message
         if req.device:
-            user_content = f"Device: {req.device}\nFault: {req.fault}\n\nQuestion: {req.message}"
+            user_content = f"Device: {req.device}\\nFault: {req.fault}\\n\\nQuestion: {req.message}"
         messages.append({"role": "user", "content": user_content})
         completion = client.chat.completions.create(
             model=GROQ_MODEL,
@@ -46,3 +47,6 @@ def ai_chat(req: ChatMessage):
 @router.get("/ai/chat/status")
 def chat_status():
     return {"ai_chat": "active", "model": GROQ_MODEL, "groq_configured": bool(GROQ_API_KEY), "provider": "Groq"}
+`;
+writeFileSync("./api/ai_chat.py", code, "utf8");
+console.log("ai_chat.py rewritten OK");
