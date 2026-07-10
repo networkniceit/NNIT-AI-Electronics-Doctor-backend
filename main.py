@@ -49,6 +49,9 @@ from api.tickets import router as tickets_router
 from api.inventory import router as inventory_router
 from api.invoices import router as invoices_router
 from api.ai_chat import router as ai_chat_router
+from api.warranty import router as warranty_router
+from api.job_queue import router as job_queue_router
+from api.reports_api import router as reports_api_router
 from api.enterprise import router as enterprise_router
 from api.devices import router as devices_router
 from api.staff import router as staff_router
@@ -120,6 +123,9 @@ routers = [
 for router in routers:
     app.include_router(router, prefix="/ai")
     app.include_router(ai_chat_router)
+    app.include_router(warranty_router, prefix="/ai")
+    app.include_router(job_queue_router, prefix="/ai")
+    app.include_router(reports_api_router, prefix="/ai")
 
 # ------------------------------------------------------------------
 # Root
@@ -174,5 +180,6 @@ def health():
         "service": "NNIT AI Electronics Doctor Pro",
         "version": "1.0.0",
     }
+
 
 
