@@ -119,6 +119,7 @@ routers = [
 
 for router in routers:
     app.include_router(router, prefix="/ai")
+    app.include_router(ai_chat_router)
 
 # ------------------------------------------------------------------
 # Root
@@ -173,4 +174,5 @@ def health():
         "service": "NNIT AI Electronics Doctor Pro",
         "version": "1.0.0",
     }
+
 
