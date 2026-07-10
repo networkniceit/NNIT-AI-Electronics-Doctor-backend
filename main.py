@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,6 +48,7 @@ from api.customers import router as customers_router
 from api.tickets import router as tickets_router
 from api.inventory import router as inventory_router
 from api.invoices import router as invoices_router
+from api.ai_chat import router as ai_chat_router
 from api.enterprise import router as enterprise_router
 from api.devices import router as devices_router
 from api.staff import router as staff_router
@@ -172,3 +173,4 @@ def health():
         "service": "NNIT AI Electronics Doctor Pro",
         "version": "1.0.0",
     }
+
