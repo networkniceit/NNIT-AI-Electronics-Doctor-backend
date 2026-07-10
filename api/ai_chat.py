@@ -38,11 +38,13 @@ def ai_chat(req: ChatMessage):
             data = json.loads(resp.read().decode("utf-8"))
             return {"reply": data["choices"][0]["message"]["content"], "status": "ok"}
     except urllib.error.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"AI error: {e.code}")
+        body = e.read().decode('utf-8')
+        raise HTTPException(status_code=500, detail=f"AI error: {e.code} - {body}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/ai/chat/status")
 def chat_status():
     return {"ai_chat": "active", "model": GROQ_MODEL, "groq_configured": bool(GROQ_API_KEY), "provider": "Groq"}
+
 
