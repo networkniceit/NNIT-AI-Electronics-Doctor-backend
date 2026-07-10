@@ -153,3 +153,45 @@ def me():
     return {
         "message": "JWT authentication module is active"
     }
+
+class ChangePassword(BaseModel):
+    username: str
+    current_password: str
+    new_password: str
+
+@router.post("/auth/change-password")
+def change_password(data: ChangePassword):
+    result = q_enterprise(
+        "SELECT * FROM users WHERE username=?",
+        (data.username,),
+        fetch=True,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    found = result[0]
+    if hash_password(data.current_password) != found["password_hash"]:
+        raise HTTPException(status_code=401, detail="Current password incorrect")
+    new_hash = hash_password(data.new_password)
+    q_enterprise(
+        "UPDATE users SET password_hash=? WHERE username=?",
+        (new_hash, data.username)
+    )
+    return {"success": True, "message": "Password changed successfully"}
+
+class ResetPassword(BaseModel):
+    username: str
+    new_password: str
+    admin_key: str
+
+@router.post("/auth/reset-password")
+def reset_password(data: ResetPassword):
+    import os
+    admin_key = os.getenv("ADMIN_RESET_KEY", "nnit-admin-2026")
+    if data.admin_key != admin_key:
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    result = q_enterprise("SELECT id FROM users WHERE username=?", (data.username,), fetch=True)
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_hash = hash_password(data.new_password)
+    q_enterprise("UPDATE users SET password_hash=? WHERE username=?", (new_hash, data.username))
+    return {"success": True, "message": "Password reset successfully"}

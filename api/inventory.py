@@ -116,3 +116,34 @@ def delete_inventory_item(item_id: int):
         "status": "deleted",
         "item_id": item_id
     }
+
+@router.patch("/inventory/deduct/{item_id}")
+def deduct_stock(item_id: int, quantity: int = 1):
+    con = sqlite3.connect(DB)
+    cur = con.cursor()
+    cur.execute("SELECT quantity, part_name, min_stock_alert FROM inventory WHERE id=?", (item_id,))
+    row = cur.fetchone()
+    if not row:
+        con.close()
+        raise HTTPException(status_code=404, detail="Item not found")
+    new_qty = max(0, row[0] - quantity)
+    cur.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_qty, item_id))
+    con.commit()
+    con.close()
+    alert = new_qty <= row[2]
+    return {"status":"updated","item_id":item_id,"new_quantity":new_qty,"low_stock_alert":alert,"item_name":row[1]}
+
+@router.patch("/inventory/restock/{item_id}")
+def restock_item(item_id: int, quantity: int = 1):
+    con = sqlite3.connect(DB)
+    cur = con.cursor()
+    cur.execute("SELECT quantity, part_name FROM inventory WHERE id=?", (item_id,))
+    row = cur.fetchone()
+    if not row:
+        con.close()
+        raise HTTPException(status_code=404, detail="Item not found")
+    new_qty = row[0] + quantity
+    cur.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_qty, item_id))
+    con.commit()
+    con.close()
+    return {"status":"updated","item_id":item_id,"new_quantity":new_qty,"item_name":row[1]}
