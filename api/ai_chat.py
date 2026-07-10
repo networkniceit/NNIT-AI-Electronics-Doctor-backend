@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+﻿from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os, json, urllib.request, urllib.error
 
@@ -6,7 +6,7 @@ router = APIRouter()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "llama-3.1-8b-instant"
 
 SYSTEM_PROMPT = """You are NNIT AI Repair Assistant, an expert electronics repair technician AI by Network Nice IT (NNIT). Help diagnose faults, suggest repair steps, estimate costs, and recommend parts for smartphones, tablets, laptops, and consumer electronics. Be concise and professional."""
 
@@ -45,3 +45,4 @@ def ai_chat(req: ChatMessage):
 @router.get("/ai/chat/status")
 def chat_status():
     return {"ai_chat": "active", "model": GROQ_MODEL, "groq_configured": bool(GROQ_API_KEY), "provider": "Groq"}
+
