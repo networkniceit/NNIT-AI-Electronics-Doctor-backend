@@ -1,4 +1,5 @@
-import os
+﻿import { writeFileSync } from "fs";
+const code = `import os
 import sqlite3
 
 # Try to use PostgreSQL if DATABASE_URL is set, otherwise fall back to SQLite
@@ -246,3 +247,6 @@ def table_count(table, db_path=None):
 
 init()
 init_users()
+`;
+writeFileSync("./services/db.py", code, "utf8");
+console.log("db.py rewritten for PostgreSQL OK");
