@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from jose import jwt
@@ -51,7 +54,8 @@ def create_token(data: dict):
 # ------------------------------------------------------------------
 
 @router.post("/auth/register")
-def register(user: RegisterUser):
+@limiter.limit("5/minute")
+def register(request: Request, user: RegisterUser):
 
     exists = q_enterprise(
         "SELECT * FROM users WHERE username=?",
@@ -100,7 +104,8 @@ def register(user: RegisterUser):
 # ------------------------------------------------------------------
 
 @router.post("/auth/login")
-def login(user: LoginUser):
+@limiter.limit("10/minute")
+def login(request: Request, user: LoginUser):
 
     result = q_enterprise(
         "SELECT * FROM users WHERE username=?",
