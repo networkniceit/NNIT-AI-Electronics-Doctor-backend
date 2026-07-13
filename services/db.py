@@ -48,10 +48,11 @@ def q(sql, p=(), fetch=False, db_path=None):
         con.close()
         return data
     con = sqlite3.connect(db_path or DB)
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute(sql, p)
     con.commit()
-    data = cur.fetchall() if fetch else None
+    data = [dict(row) for row in cur.fetchall()] if fetch else None
     con.close()
     return data
 
@@ -68,6 +69,7 @@ def q_enterprise(sql, p=(), fetch=False):
         con.close()
         return data
     con = sqlite3.connect(ENTERPRISE_DB)
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute(sql, p)
     con.commit()
