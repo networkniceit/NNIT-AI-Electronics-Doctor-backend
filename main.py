@@ -80,6 +80,18 @@ app = FastAPI(
 # CORS
 # ------------------------------------------------------------------
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://nnit-ai-electronics-doctor-frontend-production.up.railway.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -91,18 +103,6 @@ async def security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "*",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ------------------------------------------------------------------
 # Register Routers
