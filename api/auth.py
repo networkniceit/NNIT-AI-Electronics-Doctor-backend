@@ -1,3 +1,4 @@
+﻿import os
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -15,7 +16,7 @@ router = APIRouter()
 # JWT Configuration
 # ------------------------------------------------------------------
 
-SECRET_KEY = "change-this-secret-in-production"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-in-production")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 7
 
@@ -200,3 +201,7 @@ def reset_password(data: ResetPassword):
     new_hash = hash_password(data.new_password)
     q_enterprise("UPDATE users SET password_hash=? WHERE username=?", (new_hash, data.username))
     return {"success": True, "message": "Password reset successfully"}
+
+
+
+
