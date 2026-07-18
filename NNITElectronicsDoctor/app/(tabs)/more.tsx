@@ -11,7 +11,7 @@ export default function More() {
   }
   const items = [
     { icon:"📱", label:"This Device", desc:"Self-diagnostics for this phone", screen:"device-diagnostics" },
-V
+    { icon:"🔌", label:"USB Phone", desc:"Diagnose a phone via shop PC", screen:"usb-diagnostics" },
     { icon:"🛡", label:"Warranty", desc:"Manage device warranties", screen:"warranty" },
     { icon:"⚙", label:"Job Queue", desc:"Technician job assignments", screen:"job_queue" },
     { icon:"📦", label:"Inventory", desc:"Parts and stock management", screen:"inventory" },
