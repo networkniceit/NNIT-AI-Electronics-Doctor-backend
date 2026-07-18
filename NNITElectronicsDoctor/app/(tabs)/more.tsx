@@ -11,6 +11,7 @@ export default function More() {
   }
   const items = [
     { icon:"📱", label:"This Device", desc:"Self-diagnostics for this phone", screen:"device-diagnostics" },
+V
     { icon:"🛡", label:"Warranty", desc:"Manage device warranties", screen:"warranty" },
     { icon:"⚙", label:"Job Queue", desc:"Technician job assignments", screen:"job_queue" },
     { icon:"📦", label:"Inventory", desc:"Parts and stock management", screen:"inventory" },
@@ -21,6 +22,8 @@ export default function More() {
   function handlePress(screen: string) {
     if (screen === "device-diagnostics") {
       router.push("/device-diagnostics");
+    } else if (screen === "usb-diagnostics") {
+      router.push("/usb-diagnostics");
     } else {
       Alert.alert("Coming Soon","Coming in next update!");
     }
