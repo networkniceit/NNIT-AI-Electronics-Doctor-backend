@@ -26,6 +26,14 @@ export default function More() {
       router.push("/usb-diagnostics");
     } else if (screen === "warranty") {
       router.push("/warranty");
+    } else if (screen === "job_queue") {
+      router.push("/job-queue");
+    } else if (screen === "inventory") {
+      router.push("/inventory");
+    } else if (screen === "reports") {
+      router.push("/reports");
+    } else if (screen === "device_history") {
+      router.push("/device-history");
     } else {
       Alert.alert("Coming Soon","Coming in next update!");
     }
