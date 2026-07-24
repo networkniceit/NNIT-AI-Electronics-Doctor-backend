@@ -61,6 +61,7 @@ from api.enterprise import router as enterprise_router
 from api.devices import router as devices_router
 from api.staff import router as staff_router
 from api.auth import router as auth_router
+from api.calendar import router as calendar_router
 # ------------------------------------------------------------------
 # FastAPI
 # ------------------------------------------------------------------
