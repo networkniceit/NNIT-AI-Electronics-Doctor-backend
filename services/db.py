@@ -153,12 +153,6 @@ def _create_tables_pg():
             role TEXT DEFAULT 'Admin', status TEXT DEFAULT 'active',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )""",
-	q_enterprise("""CREATE TABLE IF NOT EXISTS calendar_events(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, customer_name TEXT DEFAULT '',
-        device TEXT DEFAULT '', event_date TEXT, event_time TEXT DEFAULT '',
-        event_type TEXT DEFAULT 'Appointment', notes TEXT DEFAULT '',
-        status TEXT DEFAULT 'Scheduled', created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )""")
     ]
     for t in tables:
         cur.execute(t)
