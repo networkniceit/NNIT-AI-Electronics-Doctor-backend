@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sqlite3
 
 # Try to use PostgreSQL if DATABASE_URL is set, otherwise fall back to SQLite
@@ -221,7 +221,7 @@ def init():
         due_date TEXT DEFAULT '', notes TEXT DEFAULT '',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )""")
-	q_enterprise("""CREATE TABLE IF NOT EXISTS calendar_events(
+    q_enterprise("""CREATE TABLE IF NOT EXISTS calendar_events(
         id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, customer_name TEXT DEFAULT '',
         device TEXT DEFAULT '', event_date TEXT, event_time TEXT DEFAULT '',
         event_type TEXT DEFAULT 'Appointment', notes TEXT DEFAULT '',
