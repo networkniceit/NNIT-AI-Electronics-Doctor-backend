@@ -19,11 +19,13 @@ export default function More() {
     { icon:"📱", label:"Device History", desc:"Customer device timeline", screen:"device_history" },
     { icon:"📅", label:"Calendar", desc:"Appointments and bookings", screen:"calendar" },
   ];
-  function handlePress(screen: string) {
+ function handlePress(screen: string) {
     if (screen === "device-diagnostics") {
       router.push("/device-diagnostics");
     } else if (screen === "usb-diagnostics") {
       router.push("/usb-diagnostics");
+    } else if (screen === "warranty") {
+      router.push("/warranty");
     } else {
       Alert.alert("Coming Soon","Coming in next update!");
     }
