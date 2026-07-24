@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, RefreshControl, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
@@ -33,7 +33,7 @@ export default function UsbDiagnostics() {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(`http://${targetIp}:8000/ai/android-phone`, { timeout: 6000 });
+      const res = await axios.get(`http://${targetIp}:8000/ai/android-phone`, { timeout: 15000 });
       setData(res.data);
     } catch (e: any) {
       setError("Could not reach shop PC. Check the IP and that the backend is running locally.");
