@@ -19,7 +19,7 @@ export default function More() {
     { icon:"📱", label:"Device History", desc:"Customer device timeline", screen:"device_history" },
     { icon:"📅", label:"Calendar", desc:"Appointments and bookings", screen:"calendar" },
   ];
- function handlePress(screen: string) {
+  function handlePress(screen: string) {
     if (screen === "device-diagnostics") {
       router.push("/device-diagnostics");
     } else if (screen === "usb-diagnostics") {
@@ -34,6 +34,8 @@ export default function More() {
       router.push("/reports");
     } else if (screen === "device_history") {
       router.push("/device-history");
+    } else if (screen === "calendar") {
+      router.push("/calendar");
     } else {
       Alert.alert("Coming Soon","Coming in next update!");
     }
