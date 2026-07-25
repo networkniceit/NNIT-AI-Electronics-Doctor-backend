@@ -1,4 +1,4 @@
-﻿import os
+import os
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 import hashlib
 
-from services.db import q_enterprise
+from services.db import q_enterprise, log_action
 
 router = APIRouter()
 
@@ -48,6 +48,13 @@ def create_token(data: dict):
     payload = data.copy()
     payload["exp"] = datetime.utcnow() + timedelta(days=TOKEN_EXPIRE_DAYS)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def client_ip(request: Request) -> str:
+    try:
+        return request.client.host
+    except Exception:
+        return ""
 
 
 # ------------------------------------------------------------------
@@ -94,6 +101,8 @@ def register(request: Request, user: RegisterUser):
         ),
     )
 
+    log_action(user.username, "register", f"role={user.role}", client_ip(request))
+
     return {
         "success": True,
         "message": "User registered successfully",
@@ -115,6 +124,7 @@ def login(request: Request, user: LoginUser):
     )
 
     if not result:
+        log_action(user.username, "login_failed", "user not found", client_ip(request))
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password",
@@ -123,6 +133,7 @@ def login(request: Request, user: LoginUser):
     found = result[0]
 
     if hash_password(user.password) != found["password_hash"]:
+        log_action(user.username, "login_failed", "wrong password", client_ip(request))
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password",
@@ -135,6 +146,8 @@ def login(request: Request, user: LoginUser):
             "user_id": found["id"],
         }
     )
+
+    log_action(found["username"], "login_success", "", client_ip(request))
 
     return {
         "success": True,
@@ -166,7 +179,7 @@ class ChangePassword(BaseModel):
     new_password: str
 
 @router.post("/auth/change-password")
-def change_password(data: ChangePassword):
+def change_password(request: Request, data: ChangePassword):
     result = q_enterprise(
         "SELECT * FROM users WHERE username=?",
         (data.username,),
@@ -176,12 +189,14 @@ def change_password(data: ChangePassword):
         raise HTTPException(status_code=404, detail="User not found")
     found = result[0]
     if hash_password(data.current_password) != found["password_hash"]:
+        log_action(data.username, "change_password_failed", "wrong current password", client_ip(request))
         raise HTTPException(status_code=401, detail="Current password incorrect")
     new_hash = hash_password(data.new_password)
     q_enterprise(
         "UPDATE users SET password_hash=? WHERE username=?",
         (new_hash, data.username)
     )
+    log_action(data.username, "change_password_success", "", client_ip(request))
     return {"success": True, "message": "Password changed successfully"}
 
 class ResetPassword(BaseModel):
@@ -190,18 +205,15 @@ class ResetPassword(BaseModel):
     admin_key: str
 
 @router.post("/auth/reset-password")
-def reset_password(data: ResetPassword):
-    import os
+def reset_password(request: Request, data: ResetPassword):
     admin_key = os.getenv("ADMIN_RESET_KEY", "nnit-admin-2026")
     if data.admin_key != admin_key:
+        log_action(data.username, "reset_password_failed", "invalid admin key", client_ip(request))
         raise HTTPException(status_code=403, detail="Invalid admin key")
     result = q_enterprise("SELECT id FROM users WHERE username=?", (data.username,), fetch=True)
     if not result:
         raise HTTPException(status_code=404, detail="User not found")
     new_hash = hash_password(data.new_password)
     q_enterprise("UPDATE users SET password_hash=? WHERE username=?", (new_hash, data.username))
+    log_action(data.username, "reset_password_success", "", client_ip(request))
     return {"success": True, "message": "Password reset successfully"}
-
-
-
-
