@@ -1,4 +1,4 @@
-﻿import os
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -141,11 +141,13 @@ routers = [
 
 for router in routers:
     app.include_router(router, prefix="/ai")
-    app.include_router(ai_chat_router)
-    app.include_router(warranty_router, prefix="/ai")
-    app.include_router(device_history_router, prefix="/ai")
-    app.include_router(job_queue_router, prefix="/ai")
-    app.include_router(reports_api_router, prefix="/ai")
+
+app.include_router(ai_chat_router)
+app.include_router(warranty_router, prefix="/ai")
+app.include_router(device_history_router, prefix="/ai")
+app.include_router(job_queue_router, prefix="/ai")
+app.include_router(reports_api_router, prefix="/ai")
+app.include_router(calendar_router, prefix="/ai")
 
 # ------------------------------------------------------------------
 # Root
@@ -200,8 +202,3 @@ def health():
         "service": "NNIT AI Electronics Doctor Pro",
         "version": "1.0.0",
     }
-
-
-
-
-
