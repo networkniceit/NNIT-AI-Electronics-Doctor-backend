@@ -159,6 +159,11 @@ def _create_tables_pg():
             event_type TEXT DEFAULT 'Appointment', notes TEXT DEFAULT '',
             status TEXT DEFAULT 'Scheduled', created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )""",
+        """CREATE TABLE IF NOT EXISTS audit_logs (
+            id SERIAL PRIMARY KEY, username TEXT DEFAULT '', action TEXT,
+            details TEXT DEFAULT '', ip_address TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
     for t in tables:
         cur.execute(t)
@@ -257,6 +262,15 @@ def table_count(table, db_path=None):
     except Exception:
         return 0
 
+
+def log_action(username, action, details="", ip_address=""):
+    try:
+        q_enterprise(
+            "INSERT INTO audit_logs (username, action, details, ip_address) VALUES (?, ?, ?, ?)",
+            (username, action, details, ip_address)
+        )
+    except Exception:
+        pass
 
 init()
 init_users()
