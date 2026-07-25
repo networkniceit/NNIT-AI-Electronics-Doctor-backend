@@ -1,10 +1,9 @@
-﻿from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from datetime import datetime
-import sqlite3
+from services.db import q_enterprise
 
 router = APIRouter()
-DB = "nnit_doctor.db"
+
 
 class Invoice(BaseModel):
     ticket_id: str = ""
@@ -20,114 +19,74 @@ class Invoice(BaseModel):
     due_date: str = ""
     notes: str = ""
 
-def init_db():
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS invoices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ticket_id TEXT DEFAULT "",
-            customer_name TEXT,
-            customer_email TEXT DEFAULT "",
-            customer_phone TEXT DEFAULT "",
-            device TEXT DEFAULT "",
-            fault TEXT DEFAULT "",
-            labour_cost REAL DEFAULT 0,
-            parts_cost REAL DEFAULT 0,
-            total REAL DEFAULT 0,
-            status TEXT DEFAULT "Draft",
-            due_date TEXT DEFAULT "",
-            notes TEXT DEFAULT "",
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    con.commit()
-    con.close()
-
-init_db()
 
 @router.post("/invoices")
 def create_invoice(inv: Invoice):
     total = inv.labour_cost + inv.parts_cost
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("""
-        INSERT INTO invoices (ticket_id, customer_name, customer_email, customer_phone,
-        device, fault, labour_cost, parts_cost, total, status, due_date, notes, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (inv.ticket_id, inv.customer_name, inv.customer_email, inv.customer_phone,
-          inv.device, inv.fault, inv.labour_cost, inv.parts_cost, total,
-          inv.status, inv.due_date, inv.notes, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    con.commit()
-    inv_id = cur.lastrowid
-    con.close()
+    q_enterprise(
+        "INSERT INTO invoices (ticket_id, customer_name, customer_email, customer_phone, device, fault, labour_cost, parts_cost, total, status, due_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (inv.ticket_id, inv.customer_name, inv.customer_email, inv.customer_phone, inv.device, inv.fault, inv.labour_cost, inv.parts_cost, total, inv.status, inv.due_date, inv.notes)
+    )
+    result = q_enterprise("SELECT id FROM invoices ORDER BY id DESC LIMIT 1", fetch=True)
+    inv_id = result[0]["id"] if result else 0
     return {"status": "success", "invoice_id": f"INV-{str(inv_id).zfill(6)}"}
+
 
 @router.get("/invoices")
 def list_invoices():
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("SELECT * FROM invoices ORDER BY id DESC")
-    rows = cur.fetchall()
-    con.close()
-    return [{"id": f"INV-{str(r[0]).zfill(6)}", "ticket_id": r[1], "customer_name": r[2],
-             "customer_email": r[3], "customer_phone": r[4], "device": r[5], "fault": r[6],
-             "labour_cost": r[7], "parts_cost": r[8], "total": r[9], "status": r[10],
-             "due_date": r[11], "notes": r[12], "created_at": r[13]} for r in rows]
+    rows = q_enterprise("SELECT * FROM invoices ORDER BY id DESC", fetch=True) or []
+    for r in rows:
+        r["id"] = f"INV-{str(r['id']).zfill(6)}"
+    return rows
+
+
+def _extract_id(invoice_id: str) -> str:
+    return invoice_id.replace("INV-", "").lstrip("0") or "0"
+
 
 @router.put("/invoices/{invoice_id}")
-def update_invoice(invoice_id: int, inv: Invoice):
+def update_invoice(invoice_id: str, inv: Invoice):
+    real_id = _extract_id(invoice_id)
     total = inv.labour_cost + inv.parts_cost
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("""
-        UPDATE invoices SET ticket_id=?, customer_name=?, customer_email=?, customer_phone=?,
-        device=?, fault=?, labour_cost=?, parts_cost=?, total=?, status=?, due_date=?, notes=?
-        WHERE id=?
-    """, (inv.ticket_id, inv.customer_name, inv.customer_email, inv.customer_phone,
-          inv.device, inv.fault, inv.labour_cost, inv.parts_cost, total,
-          inv.status, inv.due_date, inv.notes, invoice_id))
-    con.commit()
-    updated = cur.rowcount
-    con.close()
-    if updated == 0:
+    result = q_enterprise("SELECT id FROM invoices WHERE id=?", (real_id,), fetch=True)
+    if not result:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    return {"status": "updated", "invoice_id": f"INV-{str(invoice_id).zfill(6)}"}
+    q_enterprise(
+        "UPDATE invoices SET ticket_id=?, customer_name=?, customer_email=?, customer_phone=?, device=?, fault=?, labour_cost=?, parts_cost=?, total=?, status=?, due_date=?, notes=? WHERE id=?",
+        (inv.ticket_id, inv.customer_name, inv.customer_email, inv.customer_phone, inv.device, inv.fault, inv.labour_cost, inv.parts_cost, total, inv.status, inv.due_date, inv.notes, real_id)
+    )
+    return {"status": "updated", "invoice_id": invoice_id}
+
 
 @router.patch("/invoices/{invoice_id}/status")
-def update_invoice_status(invoice_id: int, status: str):
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("UPDATE invoices SET status=? WHERE id=?", (status, invoice_id))
-    con.commit()
-    updated = cur.rowcount
-    con.close()
-    if updated == 0:
+def update_invoice_status(invoice_id: str, status: str):
+    real_id = _extract_id(invoice_id)
+    result = q_enterprise("SELECT id FROM invoices WHERE id=?", (real_id,), fetch=True)
+    if not result:
         raise HTTPException(status_code=404, detail="Invoice not found")
+    q_enterprise("UPDATE invoices SET status=? WHERE id=?", (status, real_id))
     return {"status": "updated", "new_status": status}
 
+
 @router.delete("/invoices/{invoice_id}")
-def delete_invoice(invoice_id: int):
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("DELETE FROM invoices WHERE id=?", (invoice_id,))
-    con.commit()
-    deleted = cur.rowcount
-    con.close()
-    if deleted == 0:
+def delete_invoice(invoice_id: str):
+    real_id = _extract_id(invoice_id)
+    result = q_enterprise("SELECT id FROM invoices WHERE id=?", (real_id,), fetch=True)
+    if not result:
         raise HTTPException(status_code=404, detail="Invoice not found")
+    q_enterprise("DELETE FROM invoices WHERE id=?", (real_id,))
     return {"status": "deleted", "invoice_id": invoice_id}
+
 
 @router.get("/invoices/stats")
 def invoice_stats():
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("SELECT status, COUNT(*), SUM(total) FROM invoices GROUP BY status")
-    rows = cur.fetchall()
-    cur.execute("SELECT SUM(total) FROM invoices WHERE status='Paid'")
-    paid = cur.fetchone()[0] or 0
-    cur.execute("SELECT SUM(total) FROM invoices WHERE status IN ('Draft','Sent')")
-    pending = cur.fetchone()[0] or 0
-    con.close()
-    return {"by_status": [{"status": r[0], "count": r[1], "total": r[2]} for r in rows],
-            "total_revenue": paid, "pending_revenue": pending}
+    rows = q_enterprise("SELECT status, COUNT(*) as count, SUM(total) as total FROM invoices GROUP BY status", fetch=True) or []
+    paid_result = q_enterprise("SELECT SUM(total) as total FROM invoices WHERE status='Paid'", fetch=True)
+    pending_result = q_enterprise("SELECT SUM(total) as total FROM invoices WHERE status IN ('Draft','Sent')", fetch=True)
+    paid = (paid_result[0]["total"] if paid_result and paid_result[0]["total"] else 0)
+    pending = (pending_result[0]["total"] if pending_result and pending_result[0]["total"] else 0)
+    return {
+        "by_status": [{"status": r["status"], "count": r["count"], "total": r["total"]} for r in rows],
+        "total_revenue": paid,
+        "pending_revenue": pending,
+    }
