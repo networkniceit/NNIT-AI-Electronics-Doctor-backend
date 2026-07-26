@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import BaseModel
-from services.db import q_enterprise
+from services.db import q_enterprise, log_action
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
 
@@ -17,11 +20,13 @@ class InventoryItem(BaseModel):
 
 
 @router.post("/inventory")
-def add_inventory_item(item: InventoryItem):
+@limiter.limit("30/minute")
+def add_inventory_item(request: Request, item: InventoryItem):
     q_enterprise(
         "INSERT INTO inventory (part_name, category, sku, quantity, min_stock_alert, unit_cost, supplier, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (item.part_name, item.category, item.sku, item.quantity, item.min_stock_alert, item.unit_cost, item.supplier, item.notes)
     )
+    log_action("", "create_inventory_item", item.part_name, request.client.host if request.client else "")
     return {"status": "success"}
 
 
@@ -38,11 +43,12 @@ def list_inventory():
 
 
 @router.delete("/inventory/{item_id}")
-def delete_inventory_item(item_id: str):
+def delete_inventory_item(item_id: str, request: Request):
     result = q_enterprise("SELECT id FROM inventory WHERE id=?", (item_id,), fetch=True)
     if not result:
         raise HTTPException(status_code=404, detail="Inventory item not found")
     q_enterprise("DELETE FROM inventory WHERE id=?", (item_id,))
+    log_action("", "delete_inventory_item", str(item_id), request.client.host if request.client else "")
     return {"status": "deleted", "item_id": item_id}
 
 
