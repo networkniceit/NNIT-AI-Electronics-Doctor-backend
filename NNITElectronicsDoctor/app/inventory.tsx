@@ -10,6 +10,7 @@ export default function Inventory() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
 
   const [partName, setPartName] = useState("");
   const [category, setCategory] = useState("");
@@ -21,8 +22,12 @@ export default function Inventory() {
   async function load() {
     setRefreshing(true);
     try {
-      const r = await axios.get(`${API_URL}/ai/inventory`);
+      const [r, alerts] = await Promise.all([
+        axios.get(`${API_URL}/ai/inventory`),
+        axios.get(`${API_URL}/ai/inventory/alerts`),
+      ]);
       setItems(r.data || []);
+      setAlertCount(alerts.data?.count ?? 0);
     } catch {}
     setRefreshing(false);
   }
@@ -83,6 +88,12 @@ export default function Inventory() {
           <Text style={s.addBtnText}>+ Add</Text>
         </TouchableOpacity>
       </View>
+
+      {alertCount > 0 && (
+        <View style={s.alertBanner}>
+          <Text style={s.alertBannerText}>⚠ {alertCount} item{alertCount === 1 ? "" : "s"} low on stock</Text>
+        </View>
+      )}
 
       <View style={s.searchRow}>
         <TextInput style={s.search} placeholder="Search parts..." placeholderTextColor="#475569" value={search} onChangeText={setSearch} />
@@ -148,6 +159,8 @@ const s = StyleSheet.create({
   headerSub: { fontSize: 12, color: "#475569" },
   addBtn: { backgroundColor: "#1e3a5f", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   addBtnText: { color: "#60a5fa", fontWeight: "700", fontSize: 13 },
+  alertBanner: { backgroundColor: "#422006", paddingVertical: 10, paddingHorizontal: 16 },
+  alertBannerText: { color: "#fbbf24", fontSize: 13, fontWeight: "600" },
   searchRow: { padding: 12, backgroundColor: "#111827" },
   search: { backgroundColor: "#0d1525", borderRadius: 8, padding: 10, color: "#e2e8f0", fontSize: 13, borderWidth: 1, borderColor: "#1a2740" },
   card: { margin: 12, marginBottom: 0, backgroundColor: "#111827", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: "#1e2d40" },
