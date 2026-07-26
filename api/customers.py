@@ -1,7 +1,10 @@
-﻿from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import BaseModel
-from services.db import q, q_enterprise
+from services.db import q, q_enterprise, log_action
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
 
@@ -18,8 +21,8 @@ class Customer(BaseModel):
 # Create Customer
 # ------------------------
 @router.post("/customers")
-def add_customer(customer: Customer):
-
+@limiter.limit("30/minute")
+def add_customer(request: Request, customer: Customer):
     q_enterprise(
         """
         INSERT INTO customers
@@ -35,7 +38,7 @@ def add_customer(customer: Customer):
             customer.notes,
         ),
     )
-
+    log_action("", "create_customer", customer.name, request.client.host if request.client else "")
     return {
         "success": True,
         "message": "Customer added successfully"
@@ -47,7 +50,6 @@ def add_customer(customer: Customer):
 # ------------------------
 @router.get("/customers")
 def customers():
-
     return q_enterprise(
         "SELECT * FROM customers ORDER BY id DESC",
         fetch=True,
@@ -59,16 +61,13 @@ def customers():
 # ------------------------
 @router.get("/customers/{customer_id}")
 def get_customer(customer_id: int):
-
     data = q_enterprise(
         "SELECT * FROM customers WHERE id=?",
         (customer_id,),
         fetch=True,
     )
-
     if not data:
         raise HTTPException(404, "Customer not found")
-
     return data[0]
 
 
@@ -77,7 +76,6 @@ def get_customer(customer_id: int):
 # ------------------------
 @router.put("/customers/{customer_id}")
 def update_customer(customer_id: int, customer: Customer):
-
     q_enterprise(
         """
         UPDATE customers
@@ -100,7 +98,6 @@ def update_customer(customer_id: int, customer: Customer):
             customer_id,
         ),
     )
-
     return {
         "success": True,
         "message": "Customer updated"
@@ -111,13 +108,12 @@ def update_customer(customer_id: int, customer: Customer):
 # Delete Customer
 # ------------------------
 @router.delete("/customers/{customer_id}")
-def delete_customer(customer_id: int):
-
+def delete_customer(customer_id: int, request: Request):
     q_enterprise(
         "DELETE FROM customers WHERE id=?",
         (customer_id,),
     )
-
+    log_action("", "delete_customer", str(customer_id), request.client.host if request.client else "")
     return {
         "success": True,
         "message": "Customer deleted"
@@ -129,9 +125,7 @@ def delete_customer(customer_id: int):
 # ------------------------
 @router.get("/customers/search/{query}")
 def search_customer(query: str):
-
     like = f"%{query}%"
-
     return q_enterprise(
         """
         SELECT *
@@ -158,12 +152,10 @@ def search_customer(query: str):
 # ------------------------
 @router.get("/customers/stats")
 def customer_stats():
-
     total = q_enterprise(
         "SELECT COUNT(*) AS total FROM customers",
         fetch=True,
     )[0]["total"]
-
     return {
         "total_customers": total
     }
