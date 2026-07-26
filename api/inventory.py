@@ -30,6 +30,12 @@ def add_inventory_item(request: Request, item: InventoryItem):
     return {"status": "success"}
 
 
+@router.get("/inventory/alerts")
+def inventory_alerts():
+    rows = q_enterprise("SELECT * FROM inventory WHERE quantity <= min_stock_alert ORDER BY quantity ASC", fetch=True) or []
+    return {"count": len(rows), "items": rows}
+
+
 @router.get("/inventory")
 def list_inventory():
     rows = q_enterprise("SELECT * FROM inventory ORDER BY id DESC", fetch=True) or []
