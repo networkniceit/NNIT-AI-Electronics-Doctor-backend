@@ -10,8 +10,12 @@ const STATUS_BG: any = { Queued: "#1e3a5f", "In Progress": "#422006", Done: "#14
 export default function JobQueue() {
   const router = useRouter();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [selectedParts, setSelectedParts] = useState<Record<string, number>>({});
 
   const [customerName, setCustomerName] = useState("");
   const [device, setDevice] = useState("");
@@ -22,8 +26,12 @@ export default function JobQueue() {
   async function load() {
     setRefreshing(true);
     try {
-      const r = await axios.get(`${API_URL}/ai/jobs/queue`);
-      setJobs(r.data || []);
+      const [jobsRes, invRes] = await Promise.all([
+        axios.get(`${API_URL}/ai/jobs/queue`),
+        axios.get(`${API_URL}/ai/inventory`),
+      ]);
+      setJobs(jobsRes.data || []);
+      setInventory(invRes.data || []);
     } catch {}
     setRefreshing(false);
   }
@@ -57,6 +65,46 @@ export default function JobQueue() {
       load();
     } catch {
       Alert.alert("Error", "Failed to update status.");
+    }
+  }
+
+  function openCompleteModal(jobId: string) {
+    setActiveJobId(jobId);
+    setSelectedParts({});
+    setCompleteModalVisible(true);
+  }
+
+  function togglePart(itemId: string) {
+    setSelectedParts((prev) => {
+      const next = { ...prev };
+      if (next[itemId] != null) {
+        delete next[itemId];
+      } else {
+        next[itemId] = 1;
+      }
+      return next;
+    });
+  }
+
+  function changeQty(itemId: string, delta: number) {
+    setSelectedParts((prev) => {
+      const current = prev[itemId] ?? 1;
+      const next = Math.max(1, current + delta);
+      return { ...prev, [itemId]: next };
+    });
+  }
+
+  async function confirmComplete() {
+    if (!activeJobId) return;
+    try {
+      await axios.post(`${API_URL}/ai/jobs/queue/${activeJobId}/complete`, {
+        part_ids_and_quantities: selectedParts,
+      });
+      setCompleteModalVisible(false);
+      setActiveJobId(null);
+      load();
+    } catch {
+      Alert.alert("Error", "Failed to complete job.");
     }
   }
 
@@ -108,8 +156,8 @@ export default function JobQueue() {
                 </TouchableOpacity>
               )}
               {j.status === "In Progress" && (
-                <TouchableOpacity style={[s.btn, { backgroundColor: "#14532d" }]} onPress={() => updateStatus(j.id, "Done")}>
-                  <Text style={[s.btnText, { color: "#4ade80" }]}>Done</Text>
+                <TouchableOpacity style={[s.btn, { backgroundColor: "#14532d" }]} onPress={() => openCompleteModal(j.id)}>
+                  <Text style={[s.btnText, { color: "#4ade80" }]}>Complete</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={[s.btn, { backgroundColor: "#450a0a" }]} onPress={() => deleteJob(j.id)}>
@@ -140,36 +188,23 @@ export default function JobQueue() {
           </View>
         </View>
       </Modal>
-    </View>
-  );
-}
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0b0f1a" },
-  header: { padding: 20, paddingTop: 56, backgroundColor: "#111827", borderBottomWidth: 1, borderBottomColor: "#1e2d40", flexDirection: "row", alignItems: "center", gap: 12 },
-  backBtn: { paddingRight: 4 },
-  backText: { color: "#60a5fa", fontSize: 15, fontWeight: "600" },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#f1f5f9" },
-  headerSub: { fontSize: 12, color: "#475569" },
-  addBtn: { backgroundColor: "#1e3a5f", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  addBtnText: { color: "#60a5fa", fontWeight: "700", fontSize: 13 },
-  card: { margin: 12, marginBottom: 0, backgroundColor: "#111827", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: "#1e2d40" },
-  cardHead: { flexDirection: "row", alignItems: "center", marginBottom: 6, gap: 6 },
-  cardTitle: { flex: 1, fontSize: 13, fontWeight: "600", color: "#f1f5f9" },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
-  badgeText: { fontSize: 10, fontWeight: "600" },
-  meta: { fontSize: 11, color: "#475569", marginBottom: 4 },
-  actions: { flexDirection: "row", gap: 8, marginTop: 8 },
-  btn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 6 },
-  btnText: { fontSize: 12, fontWeight: "600" },
-  empty: { textAlign: "center", color: "#475569", padding: 32 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 20 },
-  modalCard: { backgroundColor: "#111827", borderRadius: 12, padding: 20, borderWidth: 1, borderColor: "#1e2d40" },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#f1f5f9", marginBottom: 14 },
-  input: { backgroundColor: "#0d1525", borderRadius: 8, padding: 10, color: "#e2e8f0", fontSize: 13, borderWidth: 1, borderColor: "#1a2740", marginBottom: 10 },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
-  modalCancelBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  modalCancelText: { color: "#94a3b8", fontWeight: "600" },
-  modalSaveBtn: { backgroundColor: "#3b82f6", borderRadius: 8, paddingHorizontal: 18, paddingVertical: 10 },
-  modalSaveText: { color: "#fff", fontWeight: "700" },
-});
+      <Modal visible={completeModalVisible} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Complete Job</Text>
+            <Text style={s.modalSubtitle}>Select parts used (optional) — quantities will be deducted from inventory.</Text>
+            <ScrollView style={s.partsList}>
+              {inventory.length === 0 && <Text style={s.empty}>No inventory items available</Text>}
+              {inventory.map((item) => {
+                const selected = selectedParts[item.id] != null;
+                return (
+                  <View key={item.id} style={s.partRow}>
+                    <TouchableOpacity style={s.partCheckRow} onPress={() => togglePart(item.id)}>
+                      <View style={[s.checkbox, selected && s.checkboxChecked]} />
+                      <Text style={s.partName} numberOfLines={1}>{item.part_name} (Qty: {item.quantity})</Text>
+                    </TouchableOpacity>
+                    {selected && (
+                      <View style={s.qtyControls}>
+                        <TouchableOpacity style={s.qtyBtn} onPress={() => changeQty(item.id, -1)}>
+                          <Text
